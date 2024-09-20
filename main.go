@@ -5,29 +5,38 @@ import (
     "fmt"
     "os"
     "strings"
+    "unicode"
 )
 
-// Function to count words in a file
-func countWords(filename string) (int, error) {
+func countWords(filename string) (int, map[string]int, error) {
     file, err := os.Open(filename)
     if err != nil {
-        return 0, fmt.Errorf("could not open file: %v", err)
+        return 0, nil, fmt.Errorf("could not open file: %v", err)
     }
     defer file.Close()
 
     scanner := bufio.NewScanner(file)
-    scanner.Split(bufio.ScanWords) // Set scanner to split by words
+    scanner.Split(bufio.ScanWords)
 
     wordCount := 0
+    wordFrequency := make(map[string]int)
+
     for scanner.Scan() {
-        wordCount++
+        word := strings.ToLower(scanner.Text())
+        word = strings.TrimFunc(word, func(r rune) bool {
+            return !unicode.IsLetter(r)
+        })
+        if word != "" {
+            wordCount++
+            wordFrequency[word]++
+        }
     }
 
     if err := scanner.Err(); err != nil {
-        return 0, fmt.Errorf("error reading file: %v", err)
+        return 0, nil, fmt.Errorf("error reading file: %v", err)
     }
 
-    return wordCount, nil
+    return wordCount, wordFrequency, nil
 }
 
 func main() {
